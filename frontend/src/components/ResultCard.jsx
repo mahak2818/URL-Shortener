@@ -1,9 +1,35 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import QRCode from 'qrcode'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
 
 function ResultCard({ result, onCopy }) {
   const [copied, setCopied] = useState(false)
+  const [qrCodeUrl, setQrCodeUrl] = useState('')
+
+  useEffect(() => {
+    if (result && result.type === 'success' && result.data && result.data.shortLink) {
+      const shortUrl = `${API_BASE}/${result.data.shortLink}`
+      QRCode.toDataURL(
+        shortUrl,
+        {
+          width: 256,
+          margin: 2,
+          color: {
+            dark: '#120c06',
+            light: '#ffffff',
+          },
+        },
+        (err, url) => {
+          if (err) {
+            console.error('Failed to generate QR code', err)
+            return
+          }
+          setQrCodeUrl(url)
+        }
+      )
+    }
+  }, [result])
 
   const handleCopy = () => {
     onCopy(result.data.shortLink)
@@ -84,6 +110,27 @@ function ResultCard({ result, onCopy }) {
           </span>
         </div>
       </div>
+
+      {/* QR Code Section */}
+      {qrCodeUrl && (
+        <div className="qr-section">
+          <div className="qr-wrapper">
+            <img src={qrCodeUrl} alt="QR Code" className="qr-image" />
+          </div>
+          <div className="qr-info">
+            <h3 className="qr-title">Scan or Download QR</h3>
+            <p className="qr-desc">Scan to open the link instantly or download the QR code image to print or share.</p>
+            <a
+              href={qrCodeUrl}
+              download={`cliplink-${data.shortLink}.png`}
+              className="btn-download"
+              title="Download QR code image"
+            >
+              📥 Download PNG
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Meta info */}
       <div className="result-meta">
